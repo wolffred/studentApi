@@ -1,0 +1,174 @@
+spring initalizer
+java maven
+
+
+got to pom.xml
+comment out spring boot starter data jpa
+run app and it will work
+
+getmapping
+in your appliation out @Restcontroller on top of your class
+and @Getmapping on top of your api call
+	@GetMapping("/")
+	public String hello(){
+		return "hello world";
+	}
+
+Create a class forr your database
+Student
+give it properties in database
+Create contructors and getters and setters(Wouldnt need to do it with lombok)
+
+in your appliucation
+
+
+	@GetMapping("/")
+	public List<Student> hello(){
+		return List.of( new Student(
+				1L,
+				"Mary",
+				"mary@gmail.com",
+						LocalDate.of(2000, Month.APRIL, 6),
+				12
+		)
+		);
+	}
+
+Create create a class that will serve as the api layer
+in the student folder create student controller class
+
+StudentController
+Annotate with
+@RestController
+@RequestMapping(path = "api/v1/student")
+
+give it an api func
+
+@GetMapping
+    public List<Student> getStudents(){
+        return List.of( new Student(
+                        1L,
+                        "Mary",
+                        "mary@gmail.com",
+                        LocalDate.of(2000, Month.APRIL, 6),
+                        12
+                )
+        );
+    }
+
+
+
+Student Service (Dependency injection )
+Create a student service class and put all functions in it
+Annotate the class with @Autowired
+In student controller create a paramter of it with final of student service
+create contructor
+Annotate constructor with autowired(when you use final)
+Or autowire parametrer instead
+annotate student service with @Service (@component also work, service sounds better)
+
+
+connect to database
+spring.datasource.url=jdbc:postgresql://localhost:5432/postgres
+spring.datasource.username=postgres
+spring.datasource.password=password
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.properties.hibernate.format_sql=true
+
+Link student class to database
+@Entity on student class
+@Table under entity
+    @Id
+    @SequenceGenerator(
+            name = "studemt_sequence",
+            sequenceName = "studemt_sequence",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "student_sequence"
+    )
+    private Long id;
+    private String name;
+    private String email;
+    private LocalDate dob;
+    private int age;
+
+
+    public Student() {
+    }
+
+API layer = get post
+Service layer = functions
+Data access layer = repository
+
+
+
+
+    @Transient
+    private int age;
+    this field will not be a column in our database and will be calculated for us
+    so you remove it from constructors and wherever you find it
+
+
+
+    @PostMapping
+    public void registerNewStudent(Student student){
+        studentService.addNewStudent(student);
+    }
+
+
+New Posting
+
+    public void addNewStudent(Student student) {
+        Optional<Student> studentByEmail =  studentRepository.findStudentByEmail(student.getEmail());
+        if (studentByEmail.isPresent()){
+            throw new IllegalStateException("email taken");
+        }
+        studentRepository.save(student);
+        System.out.println(student);
+    }
+
+If email is in table throw exception
+In service above
+
+
+@PostMapping
+    public void registerNewStudent(@RequestBody Student student){
+        studentService.addNewStudent(student);
+    }
+
+@Postmapping to make method a post
+@Request body so that you can add body in postman
+
+In controller
+
+
+To Delete
+Cretae your delete method in your service
+
+    public void deleteStudent(Long studentId) {
+        boolean exist = studentRepository.existsById(studentId);
+        if(!exist){
+            throw new IllegalStateException("Student with id: " + studentId + " does not exist");
+        }
+        studentRepository.deleteById(studentId);
+    }
+
+Then in your controller put the delete mapping
+
+    @DeleteMapping(path = "{studentId}")
+    public void deleteStudent(@PathVariable("studentId") Long studentId){
+        studentService.deleteStudent(studentId);
+    }
+
+
+
+
+
+
+stop database from being created in public schema
+Optional
+id refresh after delete
